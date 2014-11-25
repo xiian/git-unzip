@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+# coding=utf-8
+from __future__ import absolute_import
+import sys
+from os.path import dirname, realpath, abspath
+import logging
+
+
+prefix = dirname(dirname(realpath(abspath(__file__))))
+sys.path.insert(1, prefix)
+
+if __name__ == '__main__':
+    zipped_branch = 'blue-spruce'
+    unzip_from_branch = 'origin/master'
+    zip_base = 'fe2652a329418151362b7739c26a85e246deb9c4'
+
+    from unzip import Unzipper
+    from unzip.utils import GitCmdException
+
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(name)8s - %(funcName)8s:%(lineno)4d -  %(levelname)8s - %(message)s')
+    unzipper = Unzipper(
+        zipped_branch=zipped_branch,
+        unzip_from_branch=unzip_from_branch,
+        zip_base=zip_base,
+        logger=logging.getLogger('unzip')
+
+    )
+
+    try:
+        print unzipper.run()
+    except GitCmdException as e:
+        print e.message
+        print e.stdout
+        print '-' * 100
+        print e.stderr
