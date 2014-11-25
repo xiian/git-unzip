@@ -2,7 +2,7 @@
 import logging
 
 from .tagger import Tagger
-from .utils import run_cmd
+from .utils import run_cmd, GitCmdException
 from .commits import CommitList, Commit
 from .merges import MergeList
 
@@ -30,11 +30,13 @@ class Unzipper(object):
             raise Exception('Unable to determine the current branch.')
 
     def determine_zip_base(self):
-        print "Try to figure out the base"
+        self.logger.warning("Try to figure out the base")
 
         cmd = 'git rev-list %s ^%s | tail -n 1 | xargs git cat-file -p | grep ^parent | head -n1' % (self.zipped_branch, self.unzip_from_branch)
         stdout = run_cmd(cmd, multi=True, debug=True)
-        return stdout.split()[1]
+        zip_base = stdout.split()[1]
+        self.logger.warning('Base determined to be %s' % zip_base)
+        return zip_base
 
     def build_commit_list(self, zip_base, zipped_branch):
         import shelve
@@ -42,7 +44,6 @@ class Unzipper(object):
         shelf = shelve.open('/tmp/bobby')
         key = ':'.join((zip_base, zipped_branch))
         if key not in shelf:
-            print "REBUILDING"
             import re
 
             patt = re.compile('parent (.+)', re.MULTILINE)
@@ -73,7 +74,7 @@ class Unzipper(object):
         return mrglist
 
     def process_merge(self, merge, prev_merge):
-        self.logger.critical('Working on merge #%s' % merge.merge_no)
+        self.logger.info('Working on merge #%s' % merge.merge_no)
 
         if self.tagger.tag_exists(merge.get_tag_name('complete')):
             self.logger.info('Already completed merge #%s, moving on' % merge.merge_no)
@@ -109,7 +110,10 @@ class Unzipper(object):
         )
 
         # Compare against old for goodness sakes
-        print run_cmd('git diff --stat %s %s' % (merge.get_tag_name('complete'), merge.get_tag_name('actual')))
+        diff_output = run_cmd('git diff --stat %s %s' % (merge.get_tag_name('complete'), merge.get_tag_name('actual')))
+        if diff_output:
+            self.logger.critical('There was a difference between the two merges.')
+            self.logger.critical(diff_output)
 
     def process_last_chunk(self, prev_merge):
         self.logger.info('Rebasing the last chunk of the branch onto the newly unzipped branch')
@@ -136,7 +140,7 @@ class Unzipper(object):
         # Make merge list
         mrglist = self.make_merge_list_and_tag(commits)
 
-        self.logger.critical('-' * 100)
+        self.logger.debug('-' * 100)
 
         # Make a worker branch
         run_cmd('git checkout -B %s' % self.tagger.format_tag('work'))

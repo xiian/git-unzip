@@ -13,7 +13,7 @@ if __name__ == '__main__':
     from unzip import Unzipper
     from unzip.utils import GitCmdException, RebaseAndTagException
 
-    logging.basicConfig(level=logging.INFO,
+    logging.basicConfig(level=logging.WARNING,
                         format='%(name)8s - %(funcName)8s:%(lineno)4d -  %(levelname)8s - %(message)s')
 
     # Get parameters
@@ -38,7 +38,7 @@ if __name__ == '__main__':
                         Main branch that has been unnecessarily merged into the zipped branch. Defaults to origin/master.
                         """
     )
-    parser.add_argument('zipped_branch',
+    parser.add_argument('--zipped_branch',
                         action='store',
                         help="""
                         Branch that has the other main branch unnecessarily merged into it.
@@ -62,15 +62,33 @@ if __name__ == '__main__':
             zip_base=results.zip_base,
             logger=logging.getLogger('unzip')
         )
-        print unzipper.run()
+        unzipper.run()
     except RebaseAndTagException as e:
+        from unzip.utils import run_cmd
+
+        print '-' * 100
         print e.message
-        print '-' * 100
-        print e.stdout
-        print '-' * 100
-        print "Rebase unsuccessful. Fix it manually, then run `git tag -f %s && git unzip` to try again" % e.tag
+
+        print "Fix the following conflicts:"
+        for conflict in (run_cmd('git diff --name-only --diff-filter=U')).split("\n"):
+            print "    * %s" % conflict
+
+        print """
+Then, run `git rebase --continue` to continue the process.
+
+Once all rebasing is complete, run the following command to tag the progress:
+    git tag -f %s
+
+Finally, continue the unzipping process by re-running the unzip command:
+    %s
+        """ % (
+            e.tag,
+            ' '.join(sys.argv),
+        )
     except GitCmdException as e:
         print e.message
         print e.stdout
         print '-' * 100
         print e.stderr
+    except Exception as e:
+        print e.message
