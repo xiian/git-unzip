@@ -10,25 +10,35 @@ prefix = dirname(dirname(realpath(abspath(__file__))))
 sys.path.insert(1, prefix)
 
 if __name__ == '__main__':
-    zipped_branch = 'blue-spruce'
-    unzip_from_branch = 'origin/master'
-    zip_base = 'fe2652a329418151362b7739c26a85e246deb9c4'
-
     from unzip import Unzipper
-    from unzip.utils import GitCmdException
+    from unzip.utils import GitCmdException, RebaseAndTagException
 
-    logging.basicConfig(level=logging.DEBUG,
+    logging.basicConfig(level=logging.INFO,
                         format='%(name)8s - %(funcName)8s:%(lineno)4d -  %(levelname)8s - %(message)s')
-    unzipper = Unzipper(
-        zipped_branch=zipped_branch,
-        unzip_from_branch=unzip_from_branch,
-        zip_base=zip_base,
-        logger=logging.getLogger('unzip')
 
-    )
+    # Get parameters
+    import argparse
+    parser = argparse.ArgumentParser(description='Unzip git branches', add_help=True, version='1.0')
+    parser.add_argument('--unzip-from-branch', action='store', dest='unzip_from_branch', default='origin/master')
+    parser.add_argument('zipped_branch', action='store')
+    parser.add_argument('zip_base', action='store', nargs='?')
+
+    results = parser.parse_args()
 
     try:
+        unzipper = Unzipper(
+            zipped_branch=results.zipped_branch,
+            unzip_from_branch=results.unzip_from_branch,
+            zip_base=results.zip_base,
+            logger=logging.getLogger('unzip')
+        )
         print unzipper.run()
+    except RebaseAndTagException as e:
+        print e.message
+        print '-' * 100
+        print e.stdout
+        print '-' * 100
+        print "Rebase unsuccessful. Fix it manually, then run `git tag -f %s && git unzip` to try again" % e.tag
     except GitCmdException as e:
         print e.message
         print e.stdout

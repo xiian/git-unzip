@@ -16,6 +16,16 @@ class Unzipper(object):
 
         self.tagger = Tagger(hashinfo=(self.zipped_branch, self.unzip_from_branch))
 
+        if not self.zip_base:
+            self.zip_base = self.determine_zip_base()
+
+    def determine_zip_base(self):
+        print "Try to figure out the base"
+
+        cmd = 'git rev-list %s ^%s | tail -n 1 | xargs git cat-file -p | grep ^parent | head -n1' % (self.zipped_branch, self.unzip_from_branch)
+        stdout = run_cmd(cmd, multi=True, debug=True)
+        return stdout.split()[1]
+
     def build_commit_list(self, zip_base, zipped_branch):
         import shelve
 
@@ -133,3 +143,5 @@ class Unzipper(object):
 
         # If we finally got here, it's time to clean up
         self.cleanup()
+
+        # Success message
