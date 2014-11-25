@@ -10,6 +10,9 @@ from .merges import MergeList
 class Unzipper(object):
     def __init__(self, zipped_branch, unzip_from_branch, zip_base, logger=None):
         self.zipped_branch = zipped_branch
+        if not self.zipped_branch:
+            self.zipped_branch = self.determine_zipped_branch()
+
         self.unzip_from_branch = unzip_from_branch
         self.zip_base = zip_base
         self.logger = logger
@@ -18,6 +21,13 @@ class Unzipper(object):
 
         if not self.zip_base:
             self.zip_base = self.determine_zip_base()
+
+    def determine_zipped_branch(self):
+        cmd = 'git symbolic-ref --short -q HEAD'
+        try:
+            return run_cmd(cmd, debug=True)
+        except GitCmdException as e:
+            raise Exception('Unable to determine the current branch.')
 
     def determine_zip_base(self):
         print "Try to figure out the base"
