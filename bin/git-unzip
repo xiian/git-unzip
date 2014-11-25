@@ -18,10 +18,40 @@ if __name__ == '__main__':
 
     # Get parameters
     import argparse
-    parser = argparse.ArgumentParser(description='Unzip git branches', add_help=True, version='1.0')
-    parser.add_argument('--unzip-from-branch', action='store', dest='unzip_from_branch', default='origin/master')
-    parser.add_argument('zipped_branch', action='store')
-    parser.add_argument('zip_base', action='store', nargs='?')
+    parser = argparse.ArgumentParser(
+        description="""
+        Unzip git branches that have had the another branch merged in to "update" it.
+        """,
+        add_help=True,
+        version='1.0',
+        epilog="""
+        Been merging another branch into your branch "just to get the updates"?
+        Now, you can clean up the history of the branch so all of those merge commits can disappear.
+        Clean, simple and clear. Your future self will thank you.
+        """
+    )
+    parser.add_argument('--unzip-from-branch',
+                        action='store',
+                        default='origin/master',
+                        metavar='origin/master',
+                        help="""
+                        Main branch that has been unnecessarily merged into the zipped branch. Defaults to origin/master.
+                        """
+    )
+    parser.add_argument('zipped_branch',
+                        action='store',
+                        help="""
+                        Branch that has the other main branch unnecessarily merged into it.
+                        """
+    )
+    parser.add_argument('--zip_base',
+                        action='store',
+                        nargs='?',
+                        help="""
+                        The original branching point of the two branches. This is most likely *not* the result of
+                        `git merge-base` since that is affected by merging the main branch into the zipped branch.
+                        """
+    )
 
     results = parser.parse_args()
 
