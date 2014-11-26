@@ -52,6 +52,12 @@ if __name__ == '__main__':
                         `git merge-base` since that is affected by merging the main branch into the zipped branch.
                         """
     )
+    parser.add_argument('--cleanup',
+                        action="store_true",
+                        help="""
+                        Give up on this unzipping and clean up everything
+                        """
+    )
 
     results = parser.parse_args()
 
@@ -62,7 +68,10 @@ if __name__ == '__main__':
             zip_base=results.zip_base,
             logger=logging.getLogger('unzip')
         )
-        unzipper.run()
+        if results.cleanup:
+            unzipper.cleanup()
+        else:
+            unzipper.run()
     except RebaseAndTagException as e:
         from unzip.utils import run_cmd
 
