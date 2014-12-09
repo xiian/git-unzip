@@ -31,5 +31,5 @@ class Merge(object):
 
     def make_tags(self):
         for label in ['actual', 'pre', 'base']:
-            self.tagger.make_tag(self.get_tag_name(label, False), getattr(self, label), debug=False)
+            self.tagger.make_tag(name=self.get_tag_name(label, False), commit=(getattr(self, label)), debug=False)
 
