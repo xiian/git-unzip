@@ -46,8 +46,6 @@ class Unzipper(object):
         if key not in shelf:
             import re
 
-            patt = re.compile('parent (.+)', re.MULTILINE)
-
             commits = CommitList()
             cmd = 'git log --pretty=oneline --reverse --first-parent %s..%s' % (zip_base, zipped_branch)
             for commit_line in run_cmd(cmd).split("\n"):
@@ -55,7 +53,14 @@ class Unzipper(object):
 
                 cmd = 'git cat-file -p %s' % commit
                 output = run_cmd(cmd)
-                parents = patt.findall(output)
+
+                parents = list()
+                for line in output.split("\n"):
+                    if not len(line):
+                        break
+                    parts = line.split(' ', 1)
+                    if parts[0] == 'parent':
+                        parents.append(parts[1])
 
                 commit_obj = Commit(hash=commit, parents=parents)
                 commits.append(commit_obj)
