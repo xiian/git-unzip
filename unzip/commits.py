@@ -4,9 +4,10 @@ class CommitList(list):
 
 
 class Commit(object):
-    def __init__(self, hash, parents):
+    def __init__(self, hash, parents, important=False):
         self.hash = hash
         self.parents = parents
+        self.important = important
 
     @property
     def is_merge(self):

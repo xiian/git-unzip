@@ -46,6 +46,7 @@ class Unzipper(object):
         if key not in shelf:
             import re
 
+            master_commits = run_cmd('git rev-list %s..%s' % (zip_base, self.unzip_from_branch)).split("\n")
             commits = CommitList()
             cmd = 'git log --pretty=oneline --reverse --first-parent %s..%s' % (zip_base, zipped_branch)
             for commit_line in run_cmd(cmd).split("\n"):
@@ -54,6 +55,7 @@ class Unzipper(object):
                 cmd = 'git cat-file -p %s' % commit
                 output = run_cmd(cmd)
 
+                is_important = False
                 parents = list()
                 for line in output.split("\n"):
                     if not len(line):
@@ -61,8 +63,9 @@ class Unzipper(object):
                     parts = line.split(' ', 1)
                     if parts[0] == 'parent':
                         parents.append(parts[1])
+                        is_important = parts[1] in master_commits
 
-                commit_obj = Commit(hash=commit, parents=parents)
+                commit_obj = Commit(hash=commit, parents=parents, important=is_important)
                 commits.append(commit_obj)
             shelf[key] = commits
         return shelf[key]
@@ -72,7 +75,7 @@ class Unzipper(object):
         mrglist.set_tagger(self.tagger)
         # Tag all of the commits surrounding merges
         for i, commit in enumerate(commits):
-            if commit.is_merge:
+            if commit.important and commit.is_merge:
                 next_commit = commits[i + 1]
                 _merge = mrglist.add_merge(commit=commit, next_commit=next_commit)
                 _merge.make_tags()
