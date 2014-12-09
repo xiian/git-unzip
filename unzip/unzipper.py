@@ -158,7 +158,8 @@ class Unzipper(object):
         self.logger.info('Completed merges unzipping')
 
         # If we're all done with merges, let's just tidy up
-        self.process_last_chunk(prev_merge)
+        if prev_merge:
+            self.process_last_chunk(prev_merge)
 
         # If we finally got here, it's time to clean up
         self.cleanup()
